@@ -4,7 +4,7 @@
 
 **Delivery Status:** ✅ **100% COMPLETE - READY FOR GITHUB & STREAMLIT**
 
-**Project Location:** `C:\Users\emman\p_Claude\big_data\w3\FL_housing_analysis\`
+**GitHub Repository:** https://github.com/horacefonseca/FL_housing_montecarlo_estimation_app
 
 ---
 
@@ -332,7 +332,7 @@ git push -u origin main
 
 The Florida Housing Affordability Analyzer is **100% complete** and ready for deployment to GitHub and Streamlit Cloud. All files are organized, tested, documented, and compatible with Streamlit's environment.
 
-**Location:** `C:\Users\emman\p_Claude\big_data\w3\FL_housing_analysis\`
+**GitHub Repository:** https://github.com/horacefonseca/FL_housing_montecarlo_estimation_app
 
 **Start with:** `README.md` or `QUICKSTART.md`
 
