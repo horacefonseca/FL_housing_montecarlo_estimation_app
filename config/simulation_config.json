@@ -1,0 +1,124 @@
+{
+  "description": "Configuration file for Florida Housing Monte Carlo Simulation",
+  "version": "1.0",
+
+  "household_generation": {
+    "default_population_size": 1000,
+    "min_population_size": 50,
+    "max_population_size": 5000,
+    "default_amplification_factor": 0.3,
+    "default_random_seed": 42,
+    "income_range": {
+      "min": 25000,
+      "max": 200000
+    },
+    "age_range": {
+      "min": 25,
+      "max": 75
+    }
+  },
+
+  "simulation_parameters": {
+    "default_num_simulations": 10000,
+    "simulation_options": [1000, 5000, 10000, 20000],
+    "default_time_horizon_years": 10,
+    "time_horizon_range": {
+      "min": 5,
+      "max": 30
+    }
+  },
+
+  "florida_regions": [
+    "Miami-Dade",
+    "Tampa Bay",
+    "Orlando",
+    "Jacksonville",
+    "Panhandle",
+    "Southwest FL"
+  ],
+
+  "employment_sectors": [
+    "Tourism/Hospitality",
+    "Healthcare",
+    "Technology",
+    "Education",
+    "Retail",
+    "Construction",
+    "Finance",
+    "Government",
+    "Agriculture"
+  ],
+
+  "housing_scenarios": {
+    "keep_renting": {
+      "name": "Keep Renting",
+      "rent_increase_range": [0.03, 0.10]
+    },
+    "buy_starter": {
+      "name": "Buy Starter Home",
+      "price_range": [200000, 300000],
+      "down_payment_pct": 0.05,
+      "interest_rate_mean": 0.065,
+      "property_tax_rate": 0.009,
+      "hurricane_insurance_annual": 3500
+    },
+    "buy_standard": {
+      "name": "Buy Standard Home",
+      "price_range": [300000, 500000],
+      "down_payment_pct": 0.10,
+      "interest_rate_mean": 0.0625,
+      "property_tax_rate": 0.009,
+      "hurricane_insurance_annual": 5500
+    },
+    "buy_premium": {
+      "name": "Buy Premium Home",
+      "price_range": [500000, 800000],
+      "down_payment_pct": 0.20,
+      "interest_rate_mean": 0.06,
+      "property_tax_rate": 0.009,
+      "hurricane_insurance_annual": 8500
+    }
+  },
+
+  "regional_adjustments": {
+    "Miami-Dade": {
+      "price_multiplier": 1.35,
+      "insurance_multiplier": 1.40
+    },
+    "Tampa Bay": {
+      "price_multiplier": 1.10,
+      "insurance_multiplier": 1.20
+    },
+    "Orlando": {
+      "price_multiplier": 1.05,
+      "insurance_multiplier": 1.15
+    },
+    "Jacksonville": {
+      "price_multiplier": 0.95,
+      "insurance_multiplier": 1.10
+    },
+    "Southwest FL": {
+      "price_multiplier": 1.20,
+      "insurance_multiplier": 1.35
+    },
+    "Panhandle": {
+      "price_multiplier": 0.85,
+      "insurance_multiplier": 1.25
+    }
+  },
+
+  "income_brackets": {
+    "very_low": [0, 40000],
+    "low": [40000, 60000],
+    "moderate": [60000, 85000],
+    "upper_moderate": [85000, 120000],
+    "high": [120000, 250000]
+  },
+
+  "analysis_settings": {
+    "percentiles": [5, 25, 50, 75, 95],
+    "default_affordability_threshold": 0.35,
+    "default_housing_ratio_max": 0.45,
+    "visualization_dpi": 300
+  }
+}
