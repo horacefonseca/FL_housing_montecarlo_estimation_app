@@ -66,3 +66,10 @@ temp_report.csv
 *.h5
 *.hdf5
 *.parquet
+
+# Development files
+app_backup*.py
+auto_enhance.py
+enhance_app.py
+app_additions.txt
+
