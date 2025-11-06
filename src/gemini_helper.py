@@ -74,9 +74,21 @@ Question: What insights can you provide about this Florida household dataset?"""
 def generate_simulation_report(results_df: pd.DataFrame, params: dict) -> str:
     """Generate structured report for simulation results"""
     overall_afford = results_df['probability_affordable'].mean() * 100
-    overall_default = results_df['probability_default'].mean() * 100
-    mean_equity = results_df['mean_equity_built'].mean()
-    mean_cost = results_df['mean_total_cost'].mean()
+    overall_default = results_df.get('probability_default', pd.Series([0])).mean() * 100
+
+    # Handle equity_built which may be dict or float
+    if 'equity_built' in results_df.columns:
+        equity_values = results_df['equity_built'].apply(lambda x: x['mean'] if isinstance(x, dict) else x)
+        mean_equity = equity_values.mean()
+    else:
+        mean_equity = 0
+
+    # Handle total_cost which may be dict or float
+    if 'total_cost' in results_df.columns:
+        cost_values = results_df['total_cost'].apply(lambda x: x['mean'] if isinstance(x, dict) else x)
+        mean_cost = cost_values.mean()
+    else:
+        mean_cost = 0
 
     report = f"""MONTE CARLO SIMULATION RESULTS
 Simulations: {params.get('num_simulations', 10000):,} per household
@@ -88,8 +100,6 @@ Affordability Rate: {overall_afford:.1f}%
 Default Risk: {overall_default:.1f}%
 Mean Equity Built: ${mean_equity:,.0f}
 Mean Total Cost: ${mean_cost:,.0f}
-
-Best Scenario: {results_df.groupby('scenario')['probability_affordable'].mean().idxmax()}
 
 Question: What do these results tell about Florida housing affordability?"""
 
