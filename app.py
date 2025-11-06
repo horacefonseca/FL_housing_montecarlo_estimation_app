@@ -20,6 +20,12 @@ sys.path.append(str(Path(__file__).parent / 'src'))
 from household_generator import FloridaHouseholdGenerator
 from monte_carlo_housing import MonteCarloHousingSimulator
 from financial_analysis import FloridaHousingAnalyzer
+from gemini_helper import (
+    create_gemini_button_with_report,
+    generate_household_report,
+    generate_simulation_report,
+    add_sensitivity_sliders
+)
 
 
 # Page configuration
@@ -218,6 +224,12 @@ def generate_household_data_page():
             height=400
         )
 
+        # Gemini AI Integration
+        st.markdown("---")
+        st.subheader("🤖 Ask Gemini About This Data")
+        report = generate_household_report(df)
+        create_gemini_button_with_report(report, "household_gen")
+
         # Download option
         csv = df.to_csv(index=False)
         st.download_button(
@@ -366,6 +378,17 @@ def run_simulations_page():
                                    'probability_default', 'time_horizon_years']].head(20)
         st.dataframe(display_results, use_container_width=True)
 
+        # Gemini AI Integration
+        st.markdown("---")
+        st.subheader("🤖 Ask Gemini About These Results")
+        sim_params = {
+            'num_simulations': num_simulations,
+            'time_horizon': time_horizon,
+            'sample_size': sample_size
+        }
+        report = generate_simulation_report(results, sim_params)
+        create_gemini_button_with_report(report, "simulation")
+
 
 def analyze_results_page():
     """Page for analyzing simulation results"""
@@ -441,7 +464,21 @@ def analyze_results_page():
         fig = analyzer.generate_visualization_report(households, results)
         st.pyplot(fig)
 
-    # Export options
+    # Gemini AI Integration
+    st.markdown("---")
+    st.subheader("🤖 Ask Gemini About This Analysis")
+    overall_afford = results['probability_affordable'].mean() * 100
+    best_scenario = results.groupby('scenario')['probability_affordable'].mean().idxmax()
+    analysis_report = f"""COMPREHENSIVE FLORIDA HOUSING ANALYSIS
+Total Scenarios: {len(results)}
+Overall Affordability: {overall_afford:.1f}%
+
+Best Scenario: {best_scenario}
+
+Question: What insights about Florida housing affordability?"""
+    create_gemini_button_with_report(analysis_report[:500], "analysis")
+
+        # Export options
     st.subheader("💾 Export Results")
     if st.button("📥 Generate Detailed Report (CSV)"):
         import io
@@ -603,6 +640,29 @@ def single_household_analysis_page():
 
                 Mean Equity: ${best_equity[1]['equity_built']['mean']:,.0f}
                 """)
+
+            # Gemini AI Integration
+            st.markdown("---")
+            st.subheader("🤖 Ask Gemini About This Household")
+            hh_income = household['annual_income']
+            hh_credit = household['credit_score']
+            hh_region = household['region']
+            hh_risk = household['financial_risk_score']
+            best_scenario_name = best_afford[0]
+            best_afford_pct = best_afford[1]['probability_affordable'] * 100
+
+            single_report = f"""PERSONAL HOUSING ANALYSIS
+Household Profile:
+- Income: ${hh_income:,.0f}/year
+- Credit: {hh_credit:.0f}
+- Region: {hh_region}
+- Risk Score: {hh_risk:.1f}/100
+
+Recommended: {best_scenario_name}
+Affordability: {best_afford_pct:.1f}%
+
+Question: What should this household do?"""
+            create_gemini_button_with_report(single_report[:500], "single_household")
 
 
 if __name__ == "__main__":
