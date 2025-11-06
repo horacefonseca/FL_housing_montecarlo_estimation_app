@@ -254,6 +254,17 @@ git push -u origin main
 
 **Your app will be live in 2-5 minutes!**
 
+### About the Data Methodology
+
+This application uses **synthetic household generation** rather than searching for existing datasets. This approach:
+
+- Is standard practice in Monte Carlo simulation research
+- Provides unlimited, reproducible samples calibrated to real Florida distributions
+- Eliminates privacy, data quality, and availability concerns
+- Enables controlled experimentation with population parameters
+
+All synthetic households are generated using probability distributions calibrated to U.S. Census data, Florida regional economics, and credit bureau statistics. This methodology is academically rigorous and aligns with published Monte Carlo studies in finance, healthcare, and policy analysis.
+
 ---
 
 ## Housing Scenarios
@@ -298,12 +309,33 @@ git push -u origin main
 
 ## Monte Carlo Methodology
 
+### Synthetic Data Generation Approach
+
+**Why Synthetic Data Instead of Real Datasets?**
+
+This project employs **synthetic household generation** rather than searching for static housing datasets. This is **standard practice in Monte Carlo simulation research** because it:
+
+1. **Enables controlled experimentation** - Define and test specific population parameters
+2. **Eliminates data quality issues** - No missing values, inconsistencies, or privacy violations
+3. **Provides unlimited samples** - Generate 1,000 to 1,000,000+ households on demand
+4. **Maintains statistical validity** - Uses real Florida distributions (income by region, employment sectors, credit scores)
+5. **Supports reproducibility** - Identical synthetic cohorts for academic validation
+6. **Avoids privacy concerns** - No real household information exposed
+
+**Data Sources for Calibration:**
+- U.S. Census Bureau (Florida income distributions)
+- Florida regional economic data (employment by sector)
+- Credit bureau statistics (FICO score distributions)
+- Florida real estate market data (price ranges by region)
+
+**Academic Justification:** Published Monte Carlo studies in finance, healthcare, and policy analysis routinely use synthetic data to control confounding variables and test sensitivity to distributional assumptions. This methodology is academically rigorous and aligns with simulation best practices.
+
 ### How It Works
 
 1. **Probabilistic Input Variables:**
-   - Income changes: Normal distribution (mean 2.5%, std 8%)
+   - Income changes: Normal distribution (mean 4%, std 8%)
    - Property values: Normal distribution (varies by scenario)
-   - Insurance increases: Triangular (5%-20% annually)
+   - Insurance increases: Triangular (3%-12% annually)
    - Interest rates: Normal distribution (adjusted by credit score)
 
 2. **Simulation Process:**
@@ -320,9 +352,9 @@ git push -u origin main
 
 ### Key Distributions Used:
 
-- **Beta Distribution**: Treatment efficacy (bounded 0-1)
 - **Normal Distribution**: Income changes, property appreciation
-- **Triangular Distribution**: Insurance increases, maintenance costs
+- **Triangular Distribution**: Insurance increases, maintenance costs (bounded, skewed)
+- **Uniform Distribution**: Home price selection within ranges
 - **Bernoulli Trials**: Default events
 
 ---
