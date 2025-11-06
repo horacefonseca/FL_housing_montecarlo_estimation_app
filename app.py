@@ -102,6 +102,11 @@ def main():
         - Market volatility
         """)
 
+    # Add sensitivity parameter sliders to sidebar
+    sensitivity_params = add_sensitivity_sliders()
+    # Store in session state for access by simulation functions
+    st.session_state['sensitivity_params'] = sensitivity_params
+
     # Main content based on selected mode
     if app_mode == "📊 Generate Household Data":
         generate_household_data_page()
@@ -297,7 +302,14 @@ def run_simulations_page():
 
     if st.button("▶️ Run Simulations", type="primary"):
         with st.spinner("Running Monte Carlo simulations... This may take a few minutes."):
-            simulator = MonteCarloHousingSimulator(random_seed=42)
+            # Get sensitivity parameters from session state
+            params = st.session_state.get('sensitivity_params', {})
+            simulator = MonteCarloHousingSimulator(
+                random_seed=42,
+                income_growth=params.get('income_growth', 0.04),
+                insurance_increase=params.get('insurance_increase', 0.08),
+                affordability_threshold=params.get('affordability_threshold', 0.50)
+            )
 
             # Sample households
             sample_df = df.sample(n=sample_size, random_state=42)
@@ -560,7 +572,14 @@ def single_household_analysis_page():
 
     if st.button("🎲 Compare All Housing Scenarios", type="primary"):
         with st.spinner("Running comparative simulations..."):
-            simulator = MonteCarloHousingSimulator(random_seed=42)
+            # Get sensitivity parameters from session state
+            params = st.session_state.get('sensitivity_params', {})
+            simulator = MonteCarloHousingSimulator(
+                random_seed=42,
+                income_growth=params.get('income_growth', 0.04),
+                insurance_increase=params.get('insurance_increase', 0.08),
+                affordability_threshold=params.get('affordability_threshold', 0.50)
+            )
             comparison = simulator.compare_scenarios(household, num_simulations, time_horizon)
 
             # Display comparison results

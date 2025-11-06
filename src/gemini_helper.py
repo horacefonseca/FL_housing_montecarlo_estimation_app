@@ -165,12 +165,12 @@ def add_sensitivity_sliders():
 
     insurance_increase = st.sidebar.slider(
         "Hurricane Insurance Annual Increase",
-        min_value=5.0,
-        max_value=25.0,
+        min_value=3.0,
+        max_value=12.0,
         value=8.0,
-        step=1.0,
-        format="%.0f%%",
-        help="Expected annual increase in hurricane insurance"
+        step=0.5,
+        format="%.1f%%",
+        help="Expected annual increase in hurricane insurance (3-12% realistic range)"
     )
 
     appreciation_rate = st.sidebar.slider(

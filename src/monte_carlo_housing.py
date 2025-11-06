@@ -30,14 +30,34 @@ class HousingScenarioParameters:
 class MonteCarloHousingSimulator:
     """Monte Carlo simulation engine for Florida housing affordability analysis"""
 
-    def __init__(self, random_seed: int = 42):
+    def __init__(
+        self,
+        random_seed: int = 42,
+        income_growth: float = 0.04,
+        insurance_increase: float = 0.08,
+        affordability_threshold: float = 0.50,
+        appreciation_rate: Optional[float] = None,
+        interest_rate: Optional[float] = None
+    ):
         """
         Initialize the simulator
 
         Args:
             random_seed: Random seed for reproducibility
+            income_growth: Annual income growth rate (default 4%)
+            insurance_increase: Annual insurance increase rate (default 8%)
+            affordability_threshold: Max housing cost as % of income (default 50%)
+            appreciation_rate: Override home appreciation rate (optional)
+            interest_rate: Override mortgage interest rate (optional)
         """
         np.random.seed(random_seed)
+
+        # Store sensitivity parameters
+        self.income_growth = income_growth
+        self.insurance_increase = insurance_increase
+        self.affordability_threshold = affordability_threshold
+        self.appreciation_rate = appreciation_rate
+        self.interest_rate = interest_rate
 
         # Define housing scenarios with Florida-specific parameters
         self.scenarios = {
@@ -149,8 +169,8 @@ class MonteCarloHousingSimulator:
                 rent_increase = np.random.triangular(0.03, 0.05, 0.10)
                 rent *= (1 + rent_increase)
 
-                # Income changes (Florida average: 4% with variability)
-                income_change = np.random.normal(0.04, 0.08)
+                # Income changes (user-adjustable via sensitivity slider)
+                income_change = np.random.normal(self.income_growth, 0.08)
                 income *= (1 + income_change)
 
                 # Check affordability (rent should be <35% of gross income)
@@ -295,16 +315,18 @@ class MonteCarloHousingSimulator:
             months_affordable = 0
 
             for year in range(time_horizon_years):
-                # Income changes (Florida average: 4% with variability)
-                income_change = np.random.normal(0.04, 0.08)
+                # Income changes (user-adjustable via sensitivity slider)
+                income_change = np.random.normal(self.income_growth, 0.08)
                 income *= (1 + income_change)
 
                 # Home appreciation
                 appreciation = np.random.normal(params.appreciation_mean, params.appreciation_std)
                 current_home_value *= (1 + appreciation)
 
-                # Hurricane insurance increases (Florida-specific, realistic 3-12%)
-                insurance_increase = np.random.triangular(0.03, 0.06, 0.12)
+                # Hurricane insurance increases (user-adjustable via sensitivity slider)
+                # Clamp mode to valid range [0.03, 0.12] for triangular distribution
+                insurance_mode = np.clip(self.insurance_increase, 0.03, 0.12)
+                insurance_increase = np.random.triangular(0.03, insurance_mode, 0.12)
                 monthly_insurance *= (1 + insurance_increase)
 
                 # Property tax adjusts with home value
@@ -321,7 +343,7 @@ class MonteCarloHousingSimulator:
                 housing_ratio = total_monthly / monthly_income
 
                 for month in range(12):
-                    if housing_ratio <= 0.50:  # Up to 50% allowed for homeownership
+                    if housing_ratio <= self.affordability_threshold:  # User-adjustable threshold
                         months_affordable += 1
                         total_costs += total_monthly
                         # Pay down mortgage
