@@ -87,6 +87,14 @@ def main():
 
         st.divider()
 
+        # Add sensitivity parameter sliders RIGHT AFTER mode selection
+        sensitivity_params = add_sensitivity_sliders()
+        # Store in session state for access by simulation functions
+        st.session_state['sensitivity_params'] = sensitivity_params
+
+        st.divider()
+
+        # About section at BOTTOM
         st.markdown("""
         ### About
 
@@ -121,11 +129,6 @@ def main():
         healthcare, and policy routinely use synthetic data to control confounding
         variables and test sensitivity to distributional assumptions.
         """)
-
-    # Add sensitivity parameter sliders to sidebar
-    sensitivity_params = add_sensitivity_sliders()
-    # Store in session state for access by simulation functions
-    st.session_state['sensitivity_params'] = sensitivity_params
 
     # Main content based on selected mode
     if app_mode == "📊 Generate Household Data":
@@ -603,22 +606,34 @@ def single_household_analysis_page():
             comparison = simulator.compare_scenarios(household, num_simulations, time_horizon)
 
             # Display comparison results
-            st.subheader("📊 Scenario Comparison Results")
+            st.subheader("📊 Scenario Comparison Summary Table")
 
-            # Create comparison table
+            # Create comprehensive comparison table
             comparison_data = []
             for scenario_name, result in comparison.items():
                 comparison_data.append({
                     'Scenario': scenario_name,
-                    'Affordability Rate': f"{result['probability_affordable']*100:.1f}%",
+                    'Affordability': f"{result['probability_affordable']*100:.1f}%",
                     'Default Risk': f"{result.get('probability_default', 0)*100:.1f}%",
-                    'Mean Equity Built': f"${result['equity_built']['mean']:,.0f}",
-                    'Mean Total Cost': f"${result['total_cost_paid']['mean']:,.0f}",
-                    'Mean Affordable Months': f"{result['mean_affordable_months']:.0f}"
+                    'Equity (Median)': f"${result['equity_built']['median']:,.0f}",
+                    'Equity (5th-95th)': f"${result['equity_built']['percentile_5']:,.0f} - ${result['equity_built']['percentile_95']:,.0f}",
+                    'Total Cost (Median)': f"${result['total_cost_paid']['median']:,.0f}",
+                    'Cost Range': f"${result['total_cost_paid']['percentile_5']:,.0f} - ${result['total_cost_paid']['percentile_95']:,.0f}",
+                    'Avg Months Affordable': f"{result['mean_affordable_months']:.0f} / {time_horizon * 12}"
                 })
 
             comparison_df = pd.DataFrame(comparison_data)
-            st.dataframe(comparison_df, use_container_width=True)
+
+            # Style the dataframe for better readability
+            st.markdown("""
+            **Key Metrics Explained:**
+            - **Affordability**: % of simulations where housing stays affordable entire period
+            - **Default Risk**: % of simulations ending in financial distress
+            - **Equity**: Home value minus remaining mortgage (negative = loss)
+            - **Total Cost**: All money paid over the period
+            """)
+
+            st.dataframe(comparison_df, use_container_width=True, height=200)
 
             # Visualizations
             col1, col2 = st.columns(2)
@@ -643,6 +658,100 @@ def single_household_analysis_page():
                 plt.title('Expected Equity by Scenario')
                 plt.xticks(rotation=45, ha='right')
                 st.pyplot(fig2)
+
+            # Timeline Visualizations
+            st.markdown("---")
+            st.subheader("📈 10-Year Financial Projections")
+            st.markdown("Showing optimistic (95th percentile), expected (median), and pessimistic (5th percentile) scenarios over time.")
+
+            # Generate timeline data for each scenario
+            timeline_data = {}
+            with st.spinner("Generating timeline projections..."):
+                for scenario_name in comparison.keys():
+                    timeline_data[scenario_name] = simulator.simulate_timeline(
+                        household,
+                        scenario_name,
+                        num_simulations=1000,  # Use fewer sims for performance
+                        time_horizon_years=time_horizon
+                    )
+
+            # Equity Timeline Graph
+            st.subheader("💰 Equity Building Over Time")
+            fig_equity, ax_equity = plt.subplots(figsize=(12, 6))
+            colors = {'Keep Renting': 'gray', 'Buy Starter Home': 'steelblue',
+                     'Buy Standard Home': 'green', 'Buy Premium Home': 'purple'}
+
+            for scenario_name, data in timeline_data.items():
+                years = data['years']
+                color = colors.get(scenario_name, 'blue')
+
+                # Plot median line
+                ax_equity.plot(years, data['equity']['expected'],
+                              label=f"{scenario_name}", color=color, linewidth=2)
+
+                # Fill between optimistic and pessimistic
+                ax_equity.fill_between(years,
+                                      data['equity']['pessimistic'],
+                                      data['equity']['optimistic'],
+                                      color=color, alpha=0.2)
+
+            ax_equity.set_xlabel('Year')
+            ax_equity.set_ylabel('Equity Built ($)')
+            ax_equity.set_title('Equity Accumulation: Expected (line) with Optimistic/Pessimistic Range (shaded)')
+            ax_equity.legend(loc='best')
+            ax_equity.grid(True, alpha=0.3)
+            ax_equity.axhline(y=0, color='black', linestyle='--', linewidth=0.5)
+            st.pyplot(fig_equity)
+
+            # Monthly Costs Timeline Graph
+            st.subheader("💵 Monthly Housing Costs Over Time")
+            fig_costs, ax_costs = plt.subplots(figsize=(12, 6))
+
+            for scenario_name, data in timeline_data.items():
+                years = data['years']
+                color = colors.get(scenario_name, 'blue')
+
+                # Plot median line
+                ax_costs.plot(years, data['monthly_costs']['expected'],
+                             label=f"{scenario_name}", color=color, linewidth=2)
+
+                # Fill between optimistic and pessimistic
+                ax_costs.fill_between(years,
+                                     data['monthly_costs']['optimistic'],
+                                     data['monthly_costs']['pessimistic'],
+                                     color=color, alpha=0.2)
+
+            ax_costs.set_xlabel('Year')
+            ax_costs.set_ylabel('Monthly Cost ($)')
+            ax_costs.set_title('Monthly Housing Costs: Expected (line) with Best/Worst Case Range (shaded)')
+            ax_costs.legend(loc='best')
+            ax_costs.grid(True, alpha=0.3)
+            st.pyplot(fig_costs)
+
+            # Cumulative Costs Timeline Graph
+            st.subheader("💸 Total Costs Paid Over Time")
+            fig_cumulative, ax_cumulative = plt.subplots(figsize=(12, 6))
+
+            for scenario_name, data in timeline_data.items():
+                years = data['years']
+                color = colors.get(scenario_name, 'blue')
+
+                # Plot median line
+                ax_cumulative.plot(years, data['cumulative_costs']['expected'],
+                                  label=f"{scenario_name}", color=color, linewidth=2)
+
+                # Fill between optimistic and pessimistic
+                ax_cumulative.fill_between(years,
+                                          data['cumulative_costs']['optimistic'],
+                                          data['cumulative_costs']['pessimistic'],
+                                          color=color, alpha=0.2)
+
+            ax_cumulative.set_xlabel('Year')
+            ax_cumulative.set_ylabel('Cumulative Cost Paid ($)')
+            ax_cumulative.set_title('Total Costs Accumulated: Expected (line) with Best/Worst Case Range (shaded)')
+            ax_cumulative.legend(loc='best')
+            ax_cumulative.grid(True, alpha=0.3)
+            st.pyplot(fig_cumulative)
 
             # Recommendations
             st.subheader("🎯 Personalized Recommendations")

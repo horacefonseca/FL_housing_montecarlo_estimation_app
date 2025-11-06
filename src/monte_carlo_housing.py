@@ -455,6 +455,179 @@ class MonteCarloHousingSimulator:
 
         return comparison
 
+    def simulate_timeline(
+        self,
+        household: pd.Series,
+        scenario_name: str,
+        num_simulations: int = 1000,
+        time_horizon_years: int = 10
+    ) -> Dict:
+        """
+        Simulate scenario with year-by-year tracking for timeline visualization
+
+        Args:
+            household: Household data
+            scenario_name: Housing scenario name
+            num_simulations: Number of simulations (default 1000 for performance)
+            time_horizon_years: Time horizon in years
+
+        Returns:
+            Dictionary with yearly timelines (equity, costs, affordability)
+        """
+        params = self.scenarios[scenario_name]
+        annual_income = household['annual_income']
+        savings = household['savings']
+        credit_score = household['credit_score']
+        region = household['region']
+
+        # Get region adjustments
+        region_adj = self.region_adjustments.get(region, {'price_multiplier': 1.0, 'insurance_multiplier': 1.0})
+
+        # Track yearly metrics across all simulations
+        yearly_equity = np.zeros((num_simulations, time_horizon_years + 1))  # +1 for year 0
+        yearly_costs = np.zeros((num_simulations, time_horizon_years + 1))
+        yearly_total_paid = np.zeros((num_simulations, time_horizon_years + 1))
+
+        for sim in range(num_simulations):
+            if scenario_name == 'Keep Renting':
+                # Renting simulation
+                rent = household['current_monthly_rent']
+                income = annual_income
+                cumulative_cost = 0
+
+                yearly_equity[sim, 0] = 0
+                yearly_costs[sim, 0] = rent
+                yearly_total_paid[sim, 0] = 0
+
+                for year in range(1, time_horizon_years + 1):
+                    # Rent increases
+                    rent_increase = np.random.triangular(0.03, 0.05, 0.10)
+                    rent *= (1 + rent_increase)
+
+                    # Income changes
+                    income_change = np.random.normal(self.income_growth, 0.08)
+                    income *= (1 + income_change)
+
+                    # Accumulate costs
+                    cumulative_cost += rent * 12
+
+                    yearly_equity[sim, year] = 0
+                    yearly_costs[sim, year] = rent
+                    yearly_total_paid[sim, year] = cumulative_cost
+
+            else:
+                # Buying simulation
+                home_price = np.random.uniform(params.home_price_min, params.home_price_max)
+                home_price *= region_adj['price_multiplier']
+
+                down_payment = home_price * params.down_payment_pct
+                closing_costs = home_price * params.closing_costs_pct
+
+                # Check if can afford
+                if savings < (down_payment + closing_costs):
+                    # Cannot afford - all years show negative
+                    yearly_equity[sim, :] = -min(savings, closing_costs)
+                    yearly_costs[sim, :] = 0
+                    yearly_total_paid[sim, :] = min(savings, closing_costs)
+                    continue
+
+                loan_amount = home_price - down_payment
+
+                # Interest rate
+                credit_adjustment = (750 - credit_score) * 0.0001
+                interest_rate = np.random.normal(params.interest_rate_mean + credit_adjustment, params.interest_rate_std)
+                interest_rate = np.clip(interest_rate, 0.03, 0.10)
+
+                # Monthly mortgage
+                monthly_rate = interest_rate / 12
+                num_payments = 30 * 12
+                if monthly_rate > 0:
+                    monthly_mortgage = loan_amount * (monthly_rate * (1 + monthly_rate)**num_payments) / ((1 + monthly_rate)**num_payments - 1)
+                else:
+                    monthly_mortgage = loan_amount / num_payments
+
+                # Initial costs
+                monthly_insurance = (params.hurricane_insurance_annual * region_adj['insurance_multiplier']) / 12
+                monthly_hoa = params.hoa_monthly
+
+                current_home_value = home_price
+                current_loan_balance = loan_amount
+                income = annual_income
+                cumulative_cost = down_payment + closing_costs
+
+                # Year 0
+                yearly_equity[sim, 0] = down_payment
+                yearly_costs[sim, 0] = (monthly_mortgage + (home_price * params.property_tax_rate) / 12 + monthly_insurance + monthly_hoa)
+                yearly_total_paid[sim, 0] = cumulative_cost
+
+                for year in range(1, time_horizon_years + 1):
+                    # Income changes
+                    income_change = np.random.normal(self.income_growth, 0.08)
+                    income *= (1 + income_change)
+
+                    # Home appreciation
+                    appreciation = np.random.normal(params.appreciation_mean, params.appreciation_std)
+                    current_home_value *= (1 + appreciation)
+
+                    # Insurance increases
+                    insurance_mode = np.clip(self.insurance_increase, 0.03, 0.12)
+                    insurance_increase = np.random.triangular(0.03, insurance_mode, 0.12)
+                    monthly_insurance *= (1 + insurance_increase)
+
+                    # Property tax and maintenance
+                    monthly_property_tax = (current_home_value * params.property_tax_rate) / 12
+                    monthly_maintenance = (current_home_value * params.maintenance_annual_pct) / 12
+
+                    total_monthly = monthly_mortgage + monthly_property_tax + monthly_insurance + monthly_hoa + monthly_maintenance
+
+                    # Pay down mortgage for the year
+                    for month in range(12):
+                        interest_payment = current_loan_balance * (interest_rate / 12)
+                        principal_payment = monthly_mortgage - interest_payment
+                        current_loan_balance -= principal_payment
+                        cumulative_cost += total_monthly
+
+                    # Calculate equity at end of year
+                    equity = current_home_value - max(0, current_loan_balance)
+
+                    yearly_equity[sim, year] = equity
+                    yearly_costs[sim, year] = total_monthly
+                    yearly_total_paid[sim, year] = cumulative_cost
+
+        # Calculate percentiles for each year
+        years = list(range(time_horizon_years + 1))
+        equity_p5 = [np.percentile(yearly_equity[:, y], 5) for y in years]
+        equity_p50 = [np.percentile(yearly_equity[:, y], 50) for y in years]
+        equity_p95 = [np.percentile(yearly_equity[:, y], 95) for y in years]
+
+        costs_p5 = [np.percentile(yearly_costs[:, y], 5) for y in years]
+        costs_p50 = [np.percentile(yearly_costs[:, y], 50) for y in years]
+        costs_p95 = [np.percentile(yearly_costs[:, y], 95) for y in years]
+
+        total_p5 = [np.percentile(yearly_total_paid[:, y], 5) for y in years]
+        total_p50 = [np.percentile(yearly_total_paid[:, y], 50) for y in years]
+        total_p95 = [np.percentile(yearly_total_paid[:, y], 95) for y in years]
+
+        return {
+            'scenario': scenario_name,
+            'years': years,
+            'equity': {
+                'pessimistic': equity_p5,  # 5th percentile
+                'expected': equity_p50,     # median
+                'optimistic': equity_p95    # 95th percentile
+            },
+            'monthly_costs': {
+                'pessimistic': costs_p95,   # 95th percentile (higher is worse)
+                'expected': costs_p50,
+                'optimistic': costs_p5      # 5th percentile (lower is better)
+            },
+            'cumulative_costs': {
+                'pessimistic': total_p95,
+                'expected': total_p50,
+                'optimistic': total_p5
+            }
+        }
+
 
 if __name__ == "__main__":
     # Test the simulator
