@@ -143,14 +143,14 @@ ELSE:
 ## 🎯 Benefits
 
 ### For Users:
-✅ **Understand Results:** AI helps interpret complex Monte Carlo outputs
+✅ **Understand Results:** Gemini integration helps interpret complex Monte Carlo outputs
 ✅ **Explore Scenarios:** Sensitivity sliders show impact of assumptions
 ✅ **Get Guidance:** Structured reports ask relevant questions
 ✅ **No Cost:** Free Gemini integration (no API keys needed)
 ✅ **Privacy:** Reports contain only summary statistics, no personal data
 
 ### For Decision-Making:
-✅ **Context:** AI provides broader housing market context
+✅ **Context:** Gemini provides broader housing market context
 ✅ **Comparison:** Gemini can compare scenarios and suggest trade-offs
 ✅ **Actionable:** Questions prompt specific recommendations
 ✅ **Educational:** Users learn what drives affordability outcomes
