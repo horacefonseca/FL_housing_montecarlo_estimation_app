@@ -149,8 +149,8 @@ class MonteCarloHousingSimulator:
                 rent_increase = np.random.triangular(0.03, 0.05, 0.10)
                 rent *= (1 + rent_increase)
 
-                # Income changes (can go up or down)
-                income_change = np.random.normal(0.025, 0.08)  # Mean 2.5% increase, 8% std
+                # Income changes (Florida average: 4% with variability)
+                income_change = np.random.normal(0.04, 0.08)
                 income *= (1 + income_change)
 
                 # Check affordability (rent should be <35% of gross income)
@@ -259,6 +259,8 @@ class MonteCarloHousingSimulator:
                 default_occurred[sim] = True
                 final_equity[sim] = -closing_costs if savings >= closing_costs else -savings
                 months_solvent[sim] = 0
+                # Record lost savings as total cost
+                total_paid[sim] = min(savings, closing_costs)
                 continue
 
             # Mortgage amount
@@ -293,16 +295,16 @@ class MonteCarloHousingSimulator:
             months_affordable = 0
 
             for year in range(time_horizon_years):
-                # Income changes
-                income_change = np.random.normal(0.025, 0.08)
+                # Income changes (Florida average: 4% with variability)
+                income_change = np.random.normal(0.04, 0.08)
                 income *= (1 + income_change)
 
                 # Home appreciation
                 appreciation = np.random.normal(params.appreciation_mean, params.appreciation_std)
                 current_home_value *= (1 + appreciation)
 
-                # Hurricane insurance increases (Florida-specific!)
-                insurance_increase = np.random.triangular(0.05, 0.10, 0.20)  # 5-20% increases common
+                # Hurricane insurance increases (Florida-specific, realistic 3-12%)
+                insurance_increase = np.random.triangular(0.03, 0.06, 0.12)
                 monthly_insurance *= (1 + insurance_increase)
 
                 # Property tax adjusts with home value
@@ -314,12 +316,12 @@ class MonteCarloHousingSimulator:
                 # Recalculate total monthly cost
                 total_monthly = monthly_mortgage + monthly_property_tax + monthly_insurance + monthly_hoa + monthly_maintenance
 
-                # Check affordability (housing costs should be <35% of gross income)
+                # Check affordability (housing costs should be <50% of gross income for buying)
                 monthly_income = income / 12
                 housing_ratio = total_monthly / monthly_income
 
                 for month in range(12):
-                    if housing_ratio <= 0.45:  # Up to 45% allowed before default risk
+                    if housing_ratio <= 0.50:  # Up to 50% allowed for homeownership
                         months_affordable += 1
                         total_costs += total_monthly
                         # Pay down mortgage

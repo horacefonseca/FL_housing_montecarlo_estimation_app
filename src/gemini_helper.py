@@ -157,7 +157,7 @@ def add_sensitivity_sliders():
         "Annual Income Growth",
         min_value=-5.0,
         max_value=10.0,
-        value=3.0,
+        value=4.0,
         step=0.5,
         format="%.1f%%",
         help="Expected annual income growth rate"
@@ -167,7 +167,7 @@ def add_sensitivity_sliders():
         "Hurricane Insurance Annual Increase",
         min_value=5.0,
         max_value=25.0,
-        value=15.0,
+        value=8.0,
         step=1.0,
         format="%.0f%%",
         help="Expected annual increase in hurricane insurance"
@@ -197,7 +197,7 @@ def add_sensitivity_sliders():
         "Affordability Threshold (% of income)",
         min_value=28.0,
         max_value=50.0,
-        value=43.0,
+        value=50.0,
         step=1.0,
         format="%.0f%%",
         help="Maximum % of income for housing costs"
