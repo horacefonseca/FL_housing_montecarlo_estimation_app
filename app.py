@@ -664,6 +664,13 @@ def single_household_analysis_page():
             st.subheader("📈 10-Year Financial Projections")
             st.markdown("Showing optimistic (95th percentile), expected (median), and pessimistic (5th percentile) scenarios over time.")
 
+            st.info("""
+            **📌 How to Read These Graphs:**
+            - **Solid line** = Expected (median) outcome across simulations
+            - **Shaded area** = Range between best case (95th) and worst case (5th percentile)
+            - **Flat zero line** = Household cannot afford initial down payment for that scenario (not a viable option)
+            """)
+
             # Generate timeline data for each scenario
             timeline_data = {}
             with st.spinner("Generating timeline projections..."):
