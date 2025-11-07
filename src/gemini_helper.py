@@ -21,14 +21,9 @@ def create_gemini_button_with_report(report_text: str, stage_name: str):
     col1, col2 = st.columns([3, 1])
 
     with col1:
-        # Copy button with report text
-        st.text_area(
-            f"📋 Copy this summary to ask Gemini",
-            value=report_text,
-            height=150,
-            key=f"gemini_report_{stage_name}",
-            help="Copy this text and paste in Gemini to get AI interpretation"
-        )
+        # Copy button with report text (built-in copy button for mobile)
+        st.markdown("📋 **Copy this summary to ask Gemini:**")
+        st.code(report_text, language=None)
 
     with col2:
         st.markdown("### Ask Gemini")
